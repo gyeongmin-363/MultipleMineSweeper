@@ -2,8 +2,7 @@
 
 name: Export Kobweb site
 
-on:
-  workflow_dispatch: #A
+on: push
 
 jobs:
   export_and_upload:
