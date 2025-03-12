@@ -1,5 +1,6 @@
 site:
   title: "MultipleMineSweeper"
+  basePath: "MultipleMineSweeper"
 
 server:
   files:
