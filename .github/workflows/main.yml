@@ -24,14 +24,14 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 11
+          java-version: 17
 
       # Gradle 실행 권한 설정
       - name: Ensure Gradle is executable
         run: chmod +x gradlew
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Query Browser Cache ID
         id: browser-cache-id
@@ -45,7 +45,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ steps.browser-cache-id.outputs.value }}
 
       - name: Fetch kobweb
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1.10
         with:
           repository: "varabyte/kobweb-cli"
           tag: "v${{ env.KOBWEB_CLI_VERSION }}"
