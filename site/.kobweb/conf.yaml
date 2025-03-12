@@ -1,0 +1,14 @@
+site:
+  title: "MultipleMineSweeper"
+
+server:
+  files:
+    dev:
+      contentRoot: "build/processedResources/js/main/public"
+      script: "build/kotlin-webpack/js/developmentExecutable/multipleminesweeper.js"
+      api: "build/libs/multipleminesweeper.jar"
+    prod:
+      script: "build/kotlin-webpack/js/productionExecutable/multipleminesweeper.js"
+      siteRoot: ".kobweb/site"
+
+  port: 8080
