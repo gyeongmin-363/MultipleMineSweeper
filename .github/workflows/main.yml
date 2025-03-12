@@ -63,7 +63,7 @@ jobs:
 
       # GitHub Pages 업로드
       - name: Upload site to GitHub Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site/.kobweb/site/
 
