@@ -269,8 +269,13 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                 }
             }
             if (gameOver) {
-                SpanText("Game Over! Press Restart to play again."
+                SpanText("Game Over! Press Setting to play again."
                     , modifier = Modifier.color(Color.red)
+                )
+            }
+            if (gameClear) {
+                SpanText("⭐Game Clear⭐"
+                    , modifier = Modifier.color(Color.yellow)
                 )
             }
         }
