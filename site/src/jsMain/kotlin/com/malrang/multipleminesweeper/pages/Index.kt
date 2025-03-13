@@ -10,6 +10,7 @@ import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.*
+import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.icons.fa.FaFaceSmile
@@ -20,6 +21,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.LineStyle
+import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
@@ -123,7 +125,6 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                     // 깃발 개수 순환: 0 → 1 → 2 → ... → 최대 → 0
                     val newFlagCount = (flagCount + 1) % (tempMineMultiple.value + 1)
                     remainingMines += flagCount - newFlagCount
-                    remainingMines = if(remainingMines < 0) 0 else remainingMines
 
                     newFlagCount
                 } else flagCount
@@ -149,6 +150,21 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                 Text(if (flagMode) "🚩" else "💣")
             }
             Text("Time: $timer", )
+            Box(
+                Modifier.position(Position.Fixed)
+                    .bottom(16.px)
+                    .right(16.px)
+                    .zIndex(1000) // 다른 UI 위로 올림
+                    .styleModifier {
+                        property("transform", "scale(1)") // 줌을 무시하고 항상 일정 크기 유지
+                        property("transform-origin", "right bottom") // 오른쪽 아래를 기준으로 고정
+                        property("touch-action", "none") // 터치 이벤트 방지 (필요하면 제거)
+                    }
+            ) {
+                Button(onClick = { } ) {
+                    Text("⚙")
+                }
+            }
         }
         SpanText("Board Size: ${BOARD_SIZE} x ${BOARD_SIZE}, Mines: $MINE_COUNT")
 
