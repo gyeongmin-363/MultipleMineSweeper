@@ -15,7 +15,7 @@ import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.LineStyle
@@ -79,6 +79,9 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
     var remainingMines by remember { mutableStateOf(MINE_COUNT) }
     var gameClear by remember { mutableStateOf(false) }
     var showClear by remember { mutableStateOf(false) }
+    var isLongPress by remember { mutableStateOf(false) }
+    var job: Job? by remember { mutableStateOf(null) }
+
 
     LaunchedEffect(gameOver, gameClear) {
         while (!gameOver && !gameClear && timer < 9999) {
@@ -254,7 +257,6 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                     .borderRadius(4.px)
                 )
             }
-//            com.varabyte.kobweb.silk.components.graphics.Image()
 
             val cellSize = minOf(boardSizePx / (BOARD_SIZE + 1), boardSizePy / (BOARD_SIZE + 1)).px
 
@@ -272,7 +274,7 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                                         if(!revealed[x][y]) LineStyle.Outset else LineStyle.Solid)
                                     .backgroundColor(
                                         when {
-                                            gameOver && board[x][y] < 0 -> Color.red
+                                            gameOver && board[x][y] < 0 -> Color.orangered
                                             flagged[x][y] > 0 -> Color("#ffd663")
                                             revealed[x][y] -> Color.lightgray
                                             else -> Color.darkgray
@@ -282,34 +284,60 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                                         if (flagMode) toggleFlag(x, y)
                                         else if(revealed[x][y]) revealAround(x,y)
                                         else reveal(x, y)
-                                    },
+                                    }
+                                    .onContextMenu {
+                                        it.preventDefault()
+                                        toggleFlag(x, y)
+                                    }
+                                    .onMouseDown {
+                                        job = CoroutineScope(Dispatchers.Main).launch {
+                                            delay(300L)
+                                            toggleFlag(x, y)
+                                        }
+                                    }
+                                    .onMouseUp {
+                                        job?.cancel()
+                                    }
+                                ,
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (flagged[x][y] > 0) {
-                                    SpanText("🚩x${flagged[x][y]}", Modifier.fontSize(if(screenWidth < 600) 12.px else 18.px))
+                                    Image(src = when(flagged[x][y]){
+                                        1 -> "/flag.png"
+                                        2 -> "/flag2.png"
+                                        3 -> "/flag3.png"
+                                        4 -> "/flag4.png"
+                                        5 -> "/flag5.png"
+                                        else -> ""
+                                    },
+                                        modifier = Modifier.size(cellSize))
                                 } else if (revealed[x][y]) {
-                                    SpanText(
-                                        when {
-                                            board[x][y] < 0 -> "💣x${-board[x][y]}"  // 한 칸에 여러 개의 지뢰가 있을 경우
-                                            board[x][y] == 0 -> ""
-                                            else -> board[x][y].toString()
-                                        },
-                                        Modifier.fontSize(if(screenWidth < 600) 12.px else 18.px)
-                                            .fontWeight(FontWeight.Bold)
-                                            .color(
-                                                when(board[x][y] % 8){
-                                                    0 -> Color.black
-                                                    1 -> Color.blue
-                                                    2 -> Color.green
-                                                    3 -> Color.red
-                                                    4 -> Color.darkblue
-                                                    5 -> Color.brown
-                                                    6 -> Color("#6bdb8b")
-                                                    7 -> Color.purple
-                                                    else -> Color.black
-                                                }
-                                            )
-                                    )
+                                    when(board[x][y]){
+                                        -1 -> Image(src = "boom.png", modifier = Modifier.size(cellSize))
+                                        -2 -> Image(src = "boom2.png", modifier = Modifier.size(cellSize))
+                                        -3 -> Image(src = "boom3.png", modifier = Modifier.size(cellSize))
+                                        -4 -> Image(src = "boom4.png", modifier = Modifier.size(cellSize))
+                                        -5 -> Image(src = "boom5.png", modifier = Modifier.size(cellSize))
+                                        0 -> Text("")
+                                        else -> SpanText(
+                                            board[x][y].toString(),
+                                            Modifier.fontSize(if(screenWidth < 600) 12.px else 18.px)
+                                                .fontWeight(FontWeight.Bold)
+                                                .color(
+                                                    when(board[x][y] % 8){
+                                                        0 -> Color.black
+                                                        1 -> Color.blue
+                                                        2 -> Color.green
+                                                        3 -> Color.red
+                                                        4 -> Color.darkblue
+                                                        5 -> Color.brown
+                                                        6 -> Color("#6bdb8b")
+                                                        7 -> Color.purple
+                                                        else -> Color.black
+                                                    }
+                                                )
+                                        )
+                                    }
                                 }
                             }
                         }
