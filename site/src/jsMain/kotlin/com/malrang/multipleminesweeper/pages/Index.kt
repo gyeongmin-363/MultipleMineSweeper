@@ -2,6 +2,7 @@ package com.malrang.multipleminesweeper.pages
 
 import androidx.compose.runtime.*
 import com.varabyte.kobweb.compose.css.FontWeight
+import com.varabyte.kobweb.compose.css.margin
 import com.varabyte.kobweb.compose.foundation.layout.Arrangement
 import com.varabyte.kobweb.compose.foundation.layout.Box
 import com.varabyte.kobweb.compose.foundation.layout.Column
@@ -83,7 +84,7 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
     var timer by remember { mutableStateOf(0) }
     var remainingMines by remember { mutableStateOf(MINE_COUNT) }
     LaunchedEffect(gameOver) {
-        while (!gameOver && timer < 999) {
+        while (!gameOver && timer < 9999) {
             delay(1000L)
             timer++
         }
@@ -94,9 +95,7 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             boardSizePx = window.innerWidth
             boardSizePy = window.innerHeight
         })
-    }
 
-    LaunchedEffect(Unit) {
         setupResizeListener() // 화면 크기 변화 감지
         adjustFloatingButtonPosition() // 초기 위치 설정
     }
@@ -160,139 +159,170 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
     }
 
 
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(leftRight = 20.px)
-        ,horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.fillMaxSize().backgroundColor(Color.lightslategray),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            SpanText("Remain : $remainingMines")
-            Button(onClick = { showSettings = true }) {
-                FaFaceSmile()
-            }
-            Button(onClick = { flagMode = !flagMode }) {
-                Text(if (flagMode) "🚩" else "💣")
-            }
-            Text("Time: $timer", )
-            Box(
-                Modifier.id("floating-button") // ID 부여 (JS에서 조작 가능)
-                    .position(Position.Absolute) // Absolute로 설정하여 JavaScript가 직접 제어
-                    .size(64.px)
-                    .backgroundColor(Colors.Blue)
-                    .borderRadius(50.px) // 동그랗게
-                    .onClick {  }
-            ) {
-                SpanText("⚙", Modifier.color(Colors.White).fontSize(20.px))
-            }
-        }
-        SpanText("Board Size: ${BOARD_SIZE} x ${BOARD_SIZE}, Mines: $MINE_COUNT")
-
-        val cellSize = minOf(boardSizePx / (BOARD_SIZE+2), boardSizePy / (BOARD_SIZE+1)).px
-
         Column(
+            modifier = Modifier.margin(all = 10.px).padding(10.px)
+                .backgroundColor(Color.lightgray)
+                .border(5.px, LineStyle.Outset)
+            ,
             horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            for (x in 0 until BOARD_SIZE) {
-                Row {
-                    for (y in 0 until BOARD_SIZE) {
-                        Box(
-                            modifier = Modifier
-                                .size(cellSize)
-                                .border(1.px, LineStyle.Solid, Color.black)
-                                .backgroundColor(
-                                    when {
-                                        flagged[x][y] > 0 -> Color.yellow
-                                        gameOver && board[x][y] < 0 -> Color.red
-                                        revealed[x][y] -> Color.lightgray
-                                        else -> Color.darkgray
-                                    },
-//                                    shape = RoundedCornerShape(4.dp)
-                                )
-                                .onClick {
-                                    if (flagMode) toggleFlag(x, y) else reveal(x, y)
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (flagged[x][y] > 0) {
-                                Text("🚩x${flagged[x][y]}")
-                            }
-                            else if (revealed[x][y]) {
-                                Text(
-//                                    color = Color.Black
-                                    when {
-                                        board[x][y] < 0 -> "💣x${-board[x][y]}"  // 한 칸에 여러 개의 지뢰가 있을 경우
-                                        board[x][y] == 0 -> ""
-                                        else -> board[x][y].toString()
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (gameOver) {
-            Text("Game Over! Press Restart to play again.")
-        }
-    }
-
-
-    if (showSettings) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-                .backgroundColor(Color("#D3D3D399")) //r,g,b,a
-            ,contentAlignment = Alignment.Center
-        ){
-            Box(
-                modifier = Modifier
-                    .backgroundColor(Color.white)
-                    .padding(20.px)
-                    .borderRadius(12.px)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                SpanText("🚩 $remainingMines", Modifier
+                    .backgroundColor(Color.darkgray)
+                    .padding(8.px)
+                    .borderRadius(4.px)
+                )
+
+                Button(
+                    onClick = { showSettings = true }
+                    ,modifier = Modifier.backgroundColor(Color.dimgray)
                 ) {
-                    SpanText(
-                    "Game Settings",
-                        Modifier.fontSize(30.px).fontWeight(FontWeight.Bold)
-                    )
-                    Text("Board Size (N*N): ${tempBoardSize.value}")
-                    NumberSelector(tempBoardSize ,2, 20)
+                    Text("⚙️")
+                }
+                Button(
+                    onClick = { flagMode = !flagMode },
+                    modifier = Modifier.backgroundColor(if (flagMode) Color("#ffd663") else Color.blueviolet)
 
-                    Text("Mines Count: ${tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)}")
-                    NumberSelector(tempMineCount ,1, tempBoardSize.value * tempBoardSize.value-1)
+                ) {
+                    Text(if (flagMode) "🚩" else "💣")
+                }
+                SpanText("🕒 $timer",Modifier
+                    .backgroundColor(Color.darkgray)
+                    .padding(8.px)
+                    .borderRadius(4.px)
+                )
+            }
 
-                    Text("Mines Mutiple: ${tempMineMultiple.value}")
-                    NumberSelector(tempMineMultiple ,1, 5)
+            val cellSize = minOf(boardSizePx / (BOARD_SIZE + 1), boardSizePy / (BOARD_SIZE + 1)).px
 
-
-                    Row(
-                        Modifier.margin(top = 20.px)
-                    ){
-                        Button(
-                            onClick = {showSettings = false}
-                        ){
-                            Text("취소")
-                        }
-                        Button(
-                            onClick = {
-                                MINE_COUNT = tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)
-                                BOARD_SIZE = tempBoardSize.value
-                                resetGame()
-                                showSettings = false
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.border(5.px, LineStyle.Inset).margin(top = 20.px)
+            ) {
+                for (x in 0 until BOARD_SIZE) {
+                    Row {
+                        for (y in 0 until BOARD_SIZE) {
+                            Box(
+                                modifier = Modifier
+                                    .size(cellSize)
+                                    .border(if(!revealed[x][y]) 5.px else 1.px, if(!revealed[x][y]) LineStyle.Outset else LineStyle.Solid)
+                                    .backgroundColor(
+                                        when {
+                                            flagged[x][y] > 0 -> Color("#ffd663")
+                                            gameOver && board[x][y] < 0 -> Color.red
+                                            revealed[x][y] -> Color.lightgray
+                                            else -> Color.darkgray
+                                        }
+                                    )
+                                    .onClick {
+                                        if (flagMode) toggleFlag(x, y) else reveal(x, y)
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (flagged[x][y] > 0) {
+                                    SpanText("🚩x${flagged[x][y]}", Modifier.fontSize(if(screenWidth < 600) 12.px else 18.px))
+                                } else if (revealed[x][y]) {
+                                    SpanText(
+                                        when {
+                                            board[x][y] < 0 -> "💣x${-board[x][y]}"  // 한 칸에 여러 개의 지뢰가 있을 경우
+                                            board[x][y] == 0 -> ""
+                                            else -> board[x][y].toString()
+                                        },
+                                        Modifier.fontSize(if(screenWidth < 600) 12.px else 18.px)
+                                            .fontWeight(FontWeight.Bold)
+                                            .color(
+                                                when(board[x][y] % 8){
+                                                    0 -> Color.black
+                                                    1 -> Color.blue
+                                                    2 -> Color.green
+                                                    3 -> Color.red
+                                                    4 -> Color.darkblue
+                                                    5 -> Color.brown
+                                                    6 -> Color("#6bdb8b")
+                                                    7 -> Color.purple
+                                                    else -> Color.black
+                                                }
+                                            )
+                                    )
+                                }
                             }
-                        ){
-                            Text("확인")
                         }
                     }
                 }
             }
+            if (gameOver) {
+                SpanText("Game Over! Press Restart to play again."
+                    , modifier = Modifier.color(Color.red)
+                )
+            }
+        }
 
 
+        if (showSettings) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .backgroundColor(Color("#D3D3D399")) //r,g,b,a
+                , contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .backgroundColor(Color("#ebebeb"))
+                        .padding(20.px)
+                        .borderRadius(12.px)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        SpanText(
+                            "Game Settings",
+                            Modifier.fontSize(30.px).fontWeight(FontWeight.Bold)
+                        )
+                        SpanText("Board Size (N*N): ${tempBoardSize.value}",
+                            Modifier.margin(top = 5.px))
+                        NumberSelector(tempBoardSize, 2, 20)
+
+                        SpanText("Mines Count: ${tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)}"
+                            ,Modifier.margin(top = 5.px))
+                        NumberSelector(tempMineCount, 1, tempBoardSize.value * tempBoardSize.value - 1)
+
+                        SpanText("Mines Multiple: ${tempMineMultiple.value}",
+                            Modifier.margin(top = 5.px))
+                        NumberSelector(tempMineMultiple, 1, 5)
+
+
+                        Row(
+                            Modifier.margin(top = 20.px).fillMaxSize(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            Button(
+                                onClick = { showSettings = false }
+                            ) {
+                                Text("❌")
+                            }
+                            Button(
+                                onClick = {
+                                    MINE_COUNT =
+                                        tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)
+                                    BOARD_SIZE = tempBoardSize.value
+                                    resetGame()
+                                    showSettings = false
+                                }
+                            ) {
+                                Text("✅")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -366,7 +396,7 @@ fun NumberSelector(
                     val input = event.value?.toInt() ?: min // 숫자만 허용
                     value.value = input.coerceIn(min, max) // 범위 제한 적용
                 }
-            }
+            },
         )
 
         // "+" 버튼
