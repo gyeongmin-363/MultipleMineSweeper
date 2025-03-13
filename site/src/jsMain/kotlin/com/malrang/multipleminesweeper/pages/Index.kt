@@ -1,20 +1,28 @@
 package com.malrang.multipleminesweeper.pages
 
 import androidx.compose.runtime.*
+import com.varabyte.kobweb.compose.css.FontWeight
+import com.varabyte.kobweb.compose.foundation.layout.Arrangement
 import com.varabyte.kobweb.compose.foundation.layout.Box
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
+import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.silk.components.forms.Button
+import com.varabyte.kobweb.silk.components.icons.fa.FaFaceSmile
+import com.varabyte.kobweb.silk.components.icons.fa.FaFont
+import com.varabyte.kobweb.silk.components.text.SpanText
 import kotlinx.browser.window
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import kotlin.math.max
 import kotlin.math.min
@@ -31,13 +39,7 @@ fun HomePage() {
     val screenWidth = window.innerWidth
     val screenHeight = window.innerHeight
 
-    if(screenWidth >= 600){
-        gamePC(screenWidth, screenHeight)
-    }
-    else {
-//        gameMobile(screenWidth, screenHeight)
-    }
-
+    gamePC(screenWidth, screenHeight)
 }
 
 
@@ -54,13 +56,31 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
     var tempMineMultiple = remember { mutableStateOf(MINE_MULTIPLE) }
     var boardSizePx by remember { mutableStateOf(screenWidth) }
     var boardSizePy by remember { mutableStateOf(screenHeight) }
+    var timer by remember { mutableStateOf(0) }
+    var remainingMines by remember { mutableStateOf(MINE_COUNT) }
+    LaunchedEffect(gameOver) {
+        while (!gameOver && timer < 999) {
+            delay(1000L)
+            timer++
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        window.addEventListener("resize", {
+            boardSizePx = window.innerWidth
+            boardSizePy = window.innerHeight
+        })
+    }
 
     fun resetGame() {
-        board = generateBoard(tempMineMultiple.value)
+        val newBoard = generateBoard(tempMineMultiple.value)
+        remainingMines = newBoard.sumOf { row -> row.sumOf { if (it < 0) -it else 0 } }
+        board = newBoard
         revealed = List(BOARD_SIZE) { MutableList(BOARD_SIZE) { false } }
         flagged = List(BOARD_SIZE) { MutableList(BOARD_SIZE) { 0 } }
         gameOver = false
         flagMode = false
+        timer = 0
     }
 
     fun reveal(x: Int, y: Int) {
@@ -101,49 +121,44 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             row.mapIndexed { j, flagCount ->
                 if (i == x && j == y) {
                     // 깃발 개수 순환: 0 → 1 → 2 → ... → 최대 → 0
-                    (flagCount + 1) % (tempMineMultiple.value + 1)
+                    val newFlagCount = (flagCount + 1) % (tempMineMultiple.value + 1)
+                    remainingMines += flagCount - newFlagCount
+                    remainingMines = if(remainingMines < 0) 0 else remainingMines
+
+                    newFlagCount
                 } else flagCount
             }.toMutableList()
         }
     }
 
-    LaunchedEffect(Unit) {
-        window.addEventListener("resize", {
-            boardSizePx = window.innerWidth
-            boardSizePy = window.innerHeight
-        })
-    }
 
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.px)
+        modifier = Modifier.fillMaxSize().padding(leftRight = 20.px)
         ,horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Minesweeper")
-        Text("Board Size: ${BOARD_SIZE} x ${BOARD_SIZE}, Mines: $MINE_COUNT")
-
-        Row{
-            Button(onClick = { flagMode = !flagMode }) {
-                Text(if (flagMode) "Flag Mode" else "Reveal Mode")
-            }
-            Button(onClick = { resetGame() }) {
-                Text("Restart")
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            SpanText("Remain : $remainingMines")
             Button(onClick = { showSettings = true }) {
-                Text("Game Settings")
+                FaFaceSmile()
             }
+            Button(onClick = { flagMode = !flagMode }) {
+                Text(if (flagMode) "🚩" else "💣")
+            }
+            Text("Time: $timer", )
         }
+        SpanText("Board Size: ${BOARD_SIZE} x ${BOARD_SIZE}, Mines: $MINE_COUNT")
 
-        val cellSize = minOf((boardSizePx / BOARD_SIZE), (boardSizePy / BOARD_SIZE)).px
-        val boardSize = minOf(boardSizePx,boardSizePy).px
+        val cellSize = minOf(boardSizePx / (BOARD_SIZE+2), boardSizePy / (BOARD_SIZE+1)).px
 
         Column(
-            modifier = Modifier.size(boardSize)
+            horizontalAlignment = Alignment.CenterHorizontally
         ){
             for (x in 0 until BOARD_SIZE) {
-                Row(
-                    modifier = Modifier.weight(1f)
-                ) {
+                Row {
                     for (y in 0 until BOARD_SIZE) {
                         Box(
                             modifier = Modifier
@@ -189,39 +204,54 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
 
     if (showSettings) {
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize()
+                .backgroundColor(Color("#D3D3D399")) //r,g,b,a
+            ,contentAlignment = Alignment.Center
         ){
-            Column {
-                Text("Game Settings")
-                Text("Board Size (N*N): ${tempBoardSize.value}")
-                NumberSelector(tempBoardSize ,2, 20)
+            Box(
+                modifier = Modifier
+                    .backgroundColor(Color.white)
+                    .padding(20.px)
+                    .borderRadius(12.px)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    SpanText(
+                    "Game Settings",
+                        Modifier.fontSize(30.px).fontWeight(FontWeight.Bold)
+                    )
+                    Text("Board Size (N*N): ${tempBoardSize.value}")
+                    NumberSelector(tempBoardSize ,2, 20)
 
-                Text("Mines Count: ${tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)}")
-                NumberSelector(tempMineCount ,1, tempBoardSize.value * tempBoardSize.value-1)
+                    Text("Mines Count: ${tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)}")
+                    NumberSelector(tempMineCount ,1, tempBoardSize.value * tempBoardSize.value-1)
 
-                Text("Mines Mutiple: ${tempMineMultiple.value}")
-                NumberSelector(tempMineMultiple ,1, 5)
+                    Text("Mines Mutiple: ${tempMineMultiple.value}")
+                    NumberSelector(tempMineMultiple ,1, 5)
 
 
-                Row(Modifier.fillMaxWidth()){
-                    Button(
-                        onClick = {showSettings = false}
+                    Row(
+                        Modifier.margin(top = 20.px)
                     ){
-                        Text("취소")
-                    }
-                    Button(
-                        onClick = {
-                            MINE_COUNT = tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)
-                            BOARD_SIZE = tempBoardSize.value
-                            resetGame()
-                            showSettings = false
+                        Button(
+                            onClick = {showSettings = false}
+                        ){
+                            Text("취소")
                         }
-                    ){
-                        Text("확인")
+                        Button(
+                            onClick = {
+                                MINE_COUNT = tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)
+                                BOARD_SIZE = tempBoardSize.value
+                                resetGame()
+                                showSettings = false
+                            }
+                        ){
+                            Text("확인")
+                        }
                     }
                 }
-
             }
 
 

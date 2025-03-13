@@ -29,7 +29,6 @@ kotlin {
             implementation(libs.kobweb.silk)
             implementation(libs.silk.icons.fa)
             // implementation(libs.kobwebx.markdown)
-            
         }
     }
 }
