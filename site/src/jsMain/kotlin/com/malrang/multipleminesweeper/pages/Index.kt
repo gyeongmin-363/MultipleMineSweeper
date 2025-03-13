@@ -223,7 +223,7 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                             Box(
                                 modifier = Modifier
                                     .size(cellSize)
-                                    .border(if(flagged[x][y] > 0) 3.px else if(!revealed[x][y]) 5.px else 1.px,
+                                    .border(if(!revealed[x][y] && flagged[x][y] == 0) 5.px else 1.px,
                                         if(!revealed[x][y]) LineStyle.Outset else LineStyle.Solid)
                                     .backgroundColor(
                                         when {
