@@ -223,11 +223,12 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                             Box(
                                 modifier = Modifier
                                     .size(cellSize)
-                                    .border(if(!revealed[x][y]) 5.px else 1.px, if(!revealed[x][y]) LineStyle.Outset else LineStyle.Solid)
+                                    .border(if(flagged[x][y] > 0) 3.px else if(!revealed[x][y]) 5.px else 1.px,
+                                        if(!revealed[x][y]) LineStyle.Outset else LineStyle.Solid)
                                     .backgroundColor(
                                         when {
-                                            flagged[x][y] > 0 -> Color("#ffd663")
                                             gameOver && board[x][y] < 0 -> Color.red
+                                            flagged[x][y] > 0 -> Color("#ffd663")
                                             revealed[x][y] -> Color.lightgray
                                             else -> Color.darkgray
                                         }
