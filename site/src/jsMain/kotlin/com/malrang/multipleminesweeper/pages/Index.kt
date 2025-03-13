@@ -26,10 +26,12 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLDivElement
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
-
+import kotlinx.browser.document
+import kotlinx.browser.window
 
 var BOARD_SIZE = 10
 var MINE_COUNT = 15
@@ -42,6 +44,26 @@ fun HomePage() {
     val screenHeight = window.innerHeight
 
     gamePC(screenWidth, screenHeight)
+}
+
+
+fun adjustFloatingButtonPosition() {
+    val button = document.getElementById("floating-button") as? HTMLDivElement
+    if (button != null) {
+        val width = window.innerWidth
+        val height = window.innerHeight
+
+        // 항상 화면 오른쪽 아래에 위치하도록 조정
+        button.style.position = "absolute"
+        button.style.left = "${width - 80}px" // 버튼 크기 감안
+        button.style.top = "${height - 80}px"
+    }
+}
+
+// 화면 크기 변경 이벤트 리스너 추가
+fun setupResizeListener() {
+    window.addEventListener("resize", { adjustFloatingButtonPosition() })
+    window.addEventListener("scroll", { adjustFloatingButtonPosition() }) // 스크롤 시에도 유지
 }
 
 
@@ -72,6 +94,11 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             boardSizePx = window.innerWidth
             boardSizePy = window.innerHeight
         })
+    }
+
+    LaunchedEffect(Unit) {
+        setupResizeListener() // 화면 크기 변화 감지
+        adjustFloatingButtonPosition() // 초기 위치 설정
     }
 
     fun resetGame() {
@@ -151,19 +178,14 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             }
             Text("Time: $timer", )
             Box(
-                Modifier.position(Position.Fixed)
-                    .bottom(16.px)
-                    .right(16.px)
-                    .zIndex(1000) // 다른 UI 위로 올림
-                    .styleModifier {
-                        property("transform", "scale(1)") // 줌을 무시하고 항상 일정 크기 유지
-                        property("transform-origin", "right bottom") // 오른쪽 아래를 기준으로 고정
-                        property("touch-action", "none") // 터치 이벤트 방지 (필요하면 제거)
-                    }
+                Modifier.id("floating-button") // ID 부여 (JS에서 조작 가능)
+                    .position(Position.Absolute) // Absolute로 설정하여 JavaScript가 직접 제어
+                    .size(64.px)
+                    .backgroundColor(Colors.Blue)
+                    .borderRadius(50.px) // 동그랗게
+                    .onClick {  }
             ) {
-                Button(onClick = { } ) {
-                    Text("⚙")
-                }
+                SpanText("⚙", Modifier.color(Colors.White).fontSize(20.px))
             }
         }
         SpanText("Board Size: ${BOARD_SIZE} x ${BOARD_SIZE}, Mines: $MINE_COUNT")
