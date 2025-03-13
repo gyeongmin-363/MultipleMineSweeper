@@ -2,37 +2,29 @@ package com.malrang.multipleminesweeper.pages
 
 import androidx.compose.runtime.*
 import com.varabyte.kobweb.compose.css.FontWeight
-import com.varabyte.kobweb.compose.css.margin
 import com.varabyte.kobweb.compose.foundation.layout.Arrangement
 import com.varabyte.kobweb.compose.foundation.layout.Box
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
-import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.*
-import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.silk.components.forms.Button
-import com.varabyte.kobweb.silk.components.icons.fa.FaFaceSmile
-import com.varabyte.kobweb.silk.components.icons.fa.FaFont
 import com.varabyte.kobweb.silk.components.text.SpanText
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.LineStyle
-import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLDivElement
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
-import kotlinx.browser.document
-import kotlinx.browser.window
 
 var BOARD_SIZE = 10
 var MINE_COUNT = 15
@@ -83,8 +75,11 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
     var boardSizePy by remember { mutableStateOf(screenHeight) }
     var timer by remember { mutableStateOf(0) }
     var remainingMines by remember { mutableStateOf(MINE_COUNT) }
-    LaunchedEffect(gameOver) {
-        while (!gameOver && timer < 9999) {
+    var gameClear by remember { mutableStateOf(false) }
+    var showClear by remember { mutableStateOf(false) }
+
+    LaunchedEffect(gameOver, gameClear) {
+        while (!gameOver && !gameClear && timer < 9999) {
             delay(1000L)
             timer++
         }
@@ -107,12 +102,24 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
         revealed = List(BOARD_SIZE) { MutableList(BOARD_SIZE) { false } }
         flagged = List(BOARD_SIZE) { MutableList(BOARD_SIZE) { 0 } }
         gameOver = false
+        gameClear = false
         flagMode = false
         timer = 0
     }
 
+    fun checkGameClear() {
+        val totalCells = BOARD_SIZE * BOARD_SIZE
+        val revealedCells = revealed.sumOf { row -> row.count { it } }
+        val mineCells = board.sumOf { row -> row.count { it < 0 } }
+
+        if (revealedCells + mineCells == totalCells) {
+            gameClear = true
+            showClear = true
+        }
+    }
+
     fun reveal(x: Int, y: Int) {
-        if (gameOver || revealed[x][y] || flagged[x][y] > 0) return
+        if (gameOver || gameClear || revealed[x][y] || flagged[x][y] > 0) return
         revealed = revealed.mapIndexed { i, row ->
             row.mapIndexed { j, cell ->
                 if (i == x && j == y) true else cell
@@ -140,7 +147,10 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                 }
             }
         }
+
+        checkGameClear() // 게임 클리어 확인
     }
+
 
     fun toggleFlag(x: Int, y: Int) {
         if (revealed[x][y]) return // 이미 열린 칸은 깃발 못 놓음
@@ -265,6 +275,52 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             }
         }
 
+        if(showClear){
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .backgroundColor(Color("#D3D3D399")) //r,g,b,a
+                , contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .backgroundColor(Color("#ebebeb"))
+                        .padding(20.px)
+                        .borderRadius(12.px)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        SpanText(
+                            "⭐Clear⭐",
+                            Modifier.fontSize(30.px).fontWeight(FontWeight.Bold)
+                        )
+                        SpanText("Board Size (N*N) : ${tempBoardSize.value}",
+                            Modifier.margin(top = 5.px))
+
+                        SpanText("Mines Count : ${tempMineCount.value}"
+                            ,Modifier.margin(top = 5.px))
+
+                        SpanText("Mines Multiple : ${tempMineMultiple.value}",
+                            Modifier.margin(top = 5.px))
+
+                        SpanText("time : $timer",
+                            Modifier.margin(top = 5.px))
+
+
+                        Button(
+                            onClick = {
+                                showClear = false
+                            },
+                            modifier = Modifier.margin(top = 20.px)
+                        ) {
+                            Text("✅")
+                        }
+                    }
+                }
+            }
+        }
+
 
         if (showSettings) {
             Box(
@@ -286,15 +342,15 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                             "Game Settings",
                             Modifier.fontSize(30.px).fontWeight(FontWeight.Bold)
                         )
-                        SpanText("Board Size (N*N): ${tempBoardSize.value}",
+                        SpanText("Board Size (N*N)",
                             Modifier.margin(top = 5.px))
                         NumberSelector(tempBoardSize, 2, 20)
 
-                        SpanText("Mines Count: ${tempMineCount.value.coerceAtMost(tempBoardSize.value * tempBoardSize.value - 1)}"
+                        SpanText("Mines Count"
                             ,Modifier.margin(top = 5.px))
                         NumberSelector(tempMineCount, 1, tempBoardSize.value * tempBoardSize.value - 1)
 
-                        SpanText("Mines Multiple: ${tempMineMultiple.value}",
+                        SpanText("Mines Multiple",
                             Modifier.margin(top = 5.px))
                         NumberSelector(tempMineMultiple, 1, 5)
 
@@ -383,6 +439,10 @@ fun NumberSelector(
             Modifier.padding(8.px)
         ) {
             Text("<")
+        }
+
+        if(value.value > max){
+            value.value = max
         }
 
         // 숫자 입력 필드
