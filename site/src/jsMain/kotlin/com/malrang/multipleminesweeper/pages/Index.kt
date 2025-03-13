@@ -11,6 +11,7 @@ import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.silk.components.forms.Button
+import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -22,6 +23,7 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.Image
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -83,6 +85,15 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             delay(1000L)
             timer++
         }
+
+        if(gameOver){
+            // 모든 지뢰 칸 공개
+            revealed = revealed.mapIndexed { i, row ->
+                row.mapIndexed { j, _ ->
+                    revealed[i][j] || board[i][j] < 0
+                }.toMutableList()
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -118,6 +129,47 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
         }
     }
 
+    fun revealAround(x: Int, y: Int) {
+        if (!revealed[x][y] || gameOver || gameClear) return
+
+        // 주변 깃발 개수 확인
+        val surroundingFlags = (-1..1).sumOf { dx ->
+            (-1..1).sumOf { dy ->
+                val nx = x + dx
+                val ny = y + dy
+                if(nx in 0 until BOARD_SIZE && ny in 0 until BOARD_SIZE && flagged[nx][ny] > 0){
+                    flagged[nx][ny]
+                }
+                else {
+                    0
+                }
+            }
+        }
+
+        if (surroundingFlags == board[x][y]) {
+            // 주변 모든 칸 열기
+            for (dx in -1..1) {
+                for (dy in -1..1) {
+                    val nx = x + dx
+                    val ny = y + dy
+                    if (nx in 0 until BOARD_SIZE && ny in 0 until BOARD_SIZE && !revealed[nx][ny]) {
+                        if(board[nx][ny] < 0 && flagged[nx][ny] != -board[nx][ny]){
+                            gameOver = true
+                        }
+                        else if(flagged[nx][ny] == 0){
+                            revealed = revealed.mapIndexed { i, row ->
+                                row.mapIndexed { j, cell ->
+                                    if (i == nx && j == ny) true else cell
+                                }.toMutableList()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     fun reveal(x: Int, y: Int) {
         if (gameOver || gameClear || revealed[x][y] || flagged[x][y] > 0) return
         revealed = revealed.mapIndexed { i, row ->
@@ -128,14 +180,6 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
 
         if (board[x][y] < 0) {
             gameOver = true
-
-            // 모든 지뢰 칸 공개
-            revealed = revealed.mapIndexed { i, row ->
-                row.mapIndexed { j, _ ->
-                    revealed[i][j] || board[i][j] < 0
-                }.toMutableList()
-            }
-
         } else if (board[x][y] == 0) {
             for (dx in -1..1) {
                 for (dy in -1..1) {
@@ -210,6 +254,7 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                     .borderRadius(4.px)
                 )
             }
+//            com.varabyte.kobweb.silk.components.graphics.Image()
 
             val cellSize = minOf(boardSizePx / (BOARD_SIZE + 1), boardSizePy / (BOARD_SIZE + 1)).px
 
@@ -234,7 +279,9 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
                                         }
                                     )
                                     .onClick {
-                                        if (flagMode) toggleFlag(x, y) else reveal(x, y)
+                                        if (flagMode) toggleFlag(x, y)
+                                        else if(revealed[x][y]) revealAround(x,y)
+                                        else reveal(x, y)
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
