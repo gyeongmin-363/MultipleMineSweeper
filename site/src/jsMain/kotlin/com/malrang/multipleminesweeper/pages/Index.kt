@@ -13,7 +13,6 @@ import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.*
 import org.jetbrains.compose.web.attributes.InputType
@@ -22,8 +21,6 @@ import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.Image
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -39,26 +36,6 @@ fun HomePage() {
     val screenHeight = window.innerHeight
 
     gamePC(screenWidth, screenHeight)
-}
-
-
-fun adjustFloatingButtonPosition() {
-    val button = document.getElementById("floating-button") as? HTMLDivElement
-    if (button != null) {
-        val width = window.innerWidth
-        val height = window.innerHeight
-
-        // 항상 화면 오른쪽 아래에 위치하도록 조정
-        button.style.position = "absolute"
-        button.style.left = "${width - 80}px" // 버튼 크기 감안
-        button.style.top = "${height - 80}px"
-    }
-}
-
-// 화면 크기 변경 이벤트 리스너 추가
-fun setupResizeListener() {
-    window.addEventListener("resize", { adjustFloatingButtonPosition() })
-    window.addEventListener("scroll", { adjustFloatingButtonPosition() }) // 스크롤 시에도 유지
 }
 
 
@@ -104,9 +81,6 @@ fun gamePC(screenWidth : Int, screenHeight: Int) {
             boardSizePx = window.innerWidth
             boardSizePy = window.innerHeight
         })
-
-        setupResizeListener() // 화면 크기 변화 감지
-        adjustFloatingButtonPosition() // 초기 위치 설정
     }
 
     fun resetGame() {
