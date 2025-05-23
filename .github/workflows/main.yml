@@ -1,7 +1,6 @@
 name: Export and Deploy Kobweb site
 
-on:
-  push, workflow_dispatch: # 자동 실행
+on: [push, workflow_dispatch]
 
 permissions:
   contents: write
